@@ -32,10 +32,7 @@ function scoreTone(s: number): string {
 function FactorCell({ label, factor }: { label: string; factor: Factor }) {
   return (
     <div className="rounded-lg border border-line bg-canvas p-3">
-      <div className="flex items-baseline justify-between">
-        <div className="text-xs font-medium text-muted">{label}</div>
-        <div className="text-xs text-muted">w {factor.weight}</div>
-      </div>
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div className={`mt-1 text-lg font-semibold ${scoreTone(factor.score)}`}>
         {factor.score}
       </div>
