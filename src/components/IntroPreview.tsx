@@ -12,7 +12,7 @@ type Props = {
   onFinish: () => void
 }
 
-type Modal = null | "save-confirm-empty" | "saved" | "email-preview" | "discard-confirm"
+type Modal = null | "save-confirm-empty" | "saved" | "discard-confirm"
 
 export default function IntroPreview({
   decisionId,
@@ -80,22 +80,24 @@ export default function IntroPreview({
   }
 
   function handleComposeEmail() {
-    setModal("email-preview")
+    // Launch the system mail client with subject + cleaned intro body.
+    // Bracketed instruction lines are stripped defensively in case the AI
+    // ever ignores its "no brackets" guard rail. Team note is excluded —
+    // it's internal-only.
+    const cleaned = intro
+      .split("\n")
+      .filter((line) => !/^\s*\[.+\]\s*$/.test(line))
+      .join("\n")
+      .trim()
+    const subject = `Boardwave intro: ${requester.name} and ${chosenMember.name}`
+    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(cleaned)}`
+    window.location.href = href
   }
 
   function dismissAndReset() {
     setModal(null)
     onFinish()
   }
-
-  // The cleaned intro that would land in the email body. Strips any
-  // [bracketed instruction] lines defensively.
-  const emailBody = intro
-    .split("\n")
-    .filter((line) => !/^\s*\[.+\]\s*$/.test(line))
-    .join("\n")
-    .trim()
-  const emailSubject = `Boardwave intro: ${requester.name} and ${chosenMember.name}`
 
   return (
     <div className="space-y-4">
@@ -282,61 +284,6 @@ export default function IntroPreview({
         </div>
       </Lightbox>
 
-      {/* ── Email preview ──────────────────────────────────────────────── */}
-      <Lightbox
-        open={modal === "email-preview"}
-        onClose={() => setModal(null)}
-        ariaLabel="Email preview"
-      >
-        <div className="p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-xs font-medium text-muted">
-            Preview &middot; not sent
-          </span>
-          <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
-            How this would be sent
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-ink/75">
-            In production, the Boardwave team triggers the send from the
-            Slack review channel after approving the intro. The recipients
-            see this:
-          </p>
-
-          <div className="mt-4 overflow-hidden rounded-xl border border-line bg-surface">
-            <div className="border-b border-line bg-subtle/60 px-4 py-2.5">
-              <EmailField label="To" value={`${requester.name} <recipient field>; ${chosenMember.name} <recipient field>`} muted />
-              <EmailField label="From" value="intros@boardwave.org" muted />
-              <EmailField label="Subject" value={emailSubject} />
-            </div>
-            <div className="whitespace-pre-wrap px-4 py-4 text-sm leading-relaxed text-ink/85">
-              {emailBody}
-            </div>
-          </div>
-
-          <p className="mt-4 text-xs leading-relaxed text-muted">
-            The recipient addresses are placeholders here because the demo
-            directory doesn&rsquo;t carry real emails. The team note never
-            appears in the email — it stays in the internal review channel.
-          </p>
-
-          <div className="mt-6 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setModal(null)}
-              className="rounded-lg border border-line bg-surface px-4 py-2 text-sm text-ink transition hover:bg-subtle"
-            >
-              Back to the draft
-            </button>
-            <button
-              type="button"
-              onClick={dismissAndReset}
-              className="rounded-lg bg-brand-gradient px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95"
-            >
-              Got it &middot; Start a new brief
-            </button>
-          </div>
-        </div>
-      </Lightbox>
-
       {/* ── Discard unsaved edits ──────────────────────────────────────── */}
       <Lightbox
         open={modal === "discard-confirm"}
@@ -376,19 +323,3 @@ export default function IntroPreview({
   )
 }
 
-function EmailField({
-  label,
-  value,
-  muted,
-}: {
-  label: string
-  value: string
-  muted?: boolean
-}) {
-  return (
-    <div className="flex gap-3 text-xs">
-      <span className="w-14 shrink-0 text-muted">{label}</span>
-      <span className={muted ? "text-muted" : "text-ink"}>{value}</span>
-    </div>
-  )
-}
