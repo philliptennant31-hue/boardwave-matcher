@@ -127,14 +127,27 @@ export default function App() {
 
       <footer className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex items-center gap-2 text-xs text-muted">
-            <TenphiMark className="h-6 w-auto opacity-90" />
-            <span>
-              Concept demo built by{" "}
-              <TenphiWordmark size="sm" className="align-middle" />{" "}
-              for a Boardwave interview. Not affiliated with Boardwave.
-            </span>
-          </div>
+          <a
+            href="https://tenphi.netlify.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Tenphi"
+            className="inline-flex transition hover:opacity-80"
+          >
+            <TenphiMark className="h-12 w-auto opacity-90" />
+          </a>
+          <p className="text-xs text-muted">
+            Concept demo built by{" "}
+            <a
+              href="https://tenphi.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="align-middle transition hover:opacity-80"
+            >
+              <TenphiWordmark size="sm" className="align-middle" />
+            </a>{" "}
+            for a Boardwave interview. Not affiliated with Boardwave.
+          </p>
           <p className="text-xs text-muted">
             Nothing is sent automatically. Every decision is logged for review.
           </p>
