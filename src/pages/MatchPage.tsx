@@ -4,6 +4,7 @@ import WeightingPanel from "../components/WeightingPanel.tsx"
 import MatchList from "../components/MatchList.tsx"
 import IntroPreview from "../components/IntroPreview.tsx"
 import EmptyState from "../components/EmptyState.tsx"
+import OrientationBanner from "../components/OrientationBanner.tsx"
 import { postMatch, postDraftIntro, patchDecision } from "../lib/api.ts"
 import type {
   Decision,
@@ -180,7 +181,10 @@ export default function MatchPage({
   return (
     <div className="space-y-8">
       {state.status === "idle" && (
-        <NeedForm onSubmit={handleSubmit} submitting={false} />
+        <>
+          <OrientationBanner />
+          <NeedForm onSubmit={handleSubmit} submitting={false} />
+        </>
       )}
 
       {state.status === "matching" && (
