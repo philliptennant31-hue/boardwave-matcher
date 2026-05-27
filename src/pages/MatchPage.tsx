@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, type Dispatch, type SetStateAction } from "react"
 import NeedForm from "../components/NeedForm.tsx"
 import WeightingPanel from "../components/WeightingPanel.tsx"
 import MatchList from "../components/MatchList.tsx"
@@ -14,7 +14,12 @@ import type { MatchState } from "../lib/matchState.ts"
 
 type Props = {
   state: MatchState
-  onStateChange: (next: MatchState) => void
+  /**
+   * React-style state setter. Always accepts the updater-function form so
+   * patches batched in the same tick see the latest state. Passing a plain
+   * object would re-introduce the stale-closure bug fixed in this revision.
+   */
+  onStateChange: Dispatch<SetStateAction<MatchState>>
   onReset: () => void
   resumed: Decision | null
   onResumedConsumed: () => void
@@ -59,7 +64,9 @@ export default function MatchPage({
   }, [resumed, onResumedConsumed, onStateChange])
 
   function patch(p: Partial<MatchState>) {
-    onStateChange({ ...state, ...p })
+    // Functional setState form so concurrent patches in the same tick
+    // accumulate correctly rather than racing on a stale closure.
+    onStateChange((prev) => ({ ...prev, ...p }))
   }
 
   async function runMatch(args: {

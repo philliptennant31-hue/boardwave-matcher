@@ -1,4 +1,5 @@
 import type { Member, Stage } from "../lib/types.ts"
+import { getEngagementFor } from "../lib/engagement.ts"
 
 const STAGE_LABELS: Record<Stage, string> = {
   "pre-seed": "Pre-seed",
@@ -22,7 +23,21 @@ type Props = {
   compact?: boolean
 }
 
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-line bg-subtle px-3 py-2">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted">
+        {label}
+      </div>
+      <div className="mt-0.5 font-display text-lg font-semibold leading-none text-ink">
+        {value}
+      </div>
+    </div>
+  )
+}
+
 export default function MemberProfileCard({ member, compact }: Props) {
+  const engagement = getEngagementFor(member.slug)
   return (
     <div
       className={`rounded-2xl border border-line bg-surface ${
@@ -91,6 +106,33 @@ export default function MemberProfileCard({ member, compact }: Props) {
           </div>
         )}
       </div>
+
+      {engagement && (
+        <div className="mt-5 border-t border-line pt-4">
+          <div className="flex items-baseline justify-between">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
+              Engagement signals
+            </div>
+            <div className="text-[10px] text-muted">
+              Indicative. Learned from the decisions log over time.
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <Stat
+              label="Intros, 6m"
+              value={engagement.intros_made_6m}
+            />
+            <Stat
+              label="Response rate"
+              value={`${Math.round(engagement.response_rate * 100)}%`}
+            />
+            <Stat label="Last engaged" value={engagement.last_engaged} />
+          </div>
+          <p className="mt-3 rounded-lg border border-line bg-canvas px-3 py-2 text-xs italic leading-relaxed text-ink/75">
+            &ldquo;{engagement.learned_signal}&rdquo;
+          </p>
+        </div>
+      )}
     </div>
   )
 }

@@ -41,6 +41,7 @@ type Stage = "pre-seed" | "seed" | "series-a" | "series-b" | "series-c" | "exit"
 
 type DirectoryMember = {
   id: string
+  slug: string
   name: string
   company: string
   role: string | null
@@ -328,7 +329,9 @@ export default async (req: Request, _context: Context) => {
   // supabase-js builders are chainable but immutable, must reassign.
   let memberQuery = supabase
     .from("members")
-    .select("id, name, company, role, stage, sectors, geography, expertise, bio, open_to")
+    .select(
+      "id, slug, name, company, role, stage, sectors, geography, expertise, bio, open_to",
+    )
   if (excluded_ids.length > 0) {
     memberQuery = memberQuery.not("id", "in", `(${excluded_ids.join(",")})`)
   }

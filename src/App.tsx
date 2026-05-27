@@ -77,30 +77,27 @@ export default function App() {
     <div className="min-h-screen bg-canvas text-ink">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2.5"
-            >
-              <BrandMark className="h-8 w-auto" />
-              <span className="font-display text-2xl font-semibold leading-none tracking-tight text-ink">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-3 text-left"
+          >
+            <BrandMark className="h-9 w-auto" />
+            <span className="flex flex-col leading-tight">
+              <span className="font-display text-2xl font-semibold tracking-tight text-ink">
                 Boardwave
               </span>
-              <span className="ml-2 hidden text-sm text-muted sm:inline">
+              <span
+                className="mt-0.5 flex items-center gap-1.5 text-xs text-muted"
+                title="This is a concept demo, not a Boardwave product."
+              >
                 Member matcher
+                <span aria-hidden="true">·</span>
+                <span>Concept demo by</span>
+                <TenphiWordmark size="sm" />
               </span>
-            </button>
-            <span
-              className="hidden items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 md:inline-flex"
-              title="This is a concept demo, not a Boardwave product."
-            >
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
-                Concept demo by
-              </span>
-              <TenphiWordmark size="sm" />
             </span>
-          </div>
+          </button>
           <nav className="flex items-center gap-1">
             <NavLink to="/" label="Match" />
             <NavLink to="/directory" label="Directory" />

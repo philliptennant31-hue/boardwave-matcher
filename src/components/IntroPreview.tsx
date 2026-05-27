@@ -69,19 +69,17 @@ export default function IntroPreview({
   }
 
   function handleComposeEmail() {
-    // Compose a mailto: link with the intro in the body and the team note
-    // appended below a separator so the sender can review or strip it before
-    // sending. No To: pre-filled because we don't have member emails on file
-    // in the demo. Subject mirrors Boardwave house style.
+    // Open the system mail client with only the outgoing intro in the body.
+    // The team note is internal-only and never makes it into the email.
+    // We also strip any [bracketed instruction] lines defensively in case
+    // the model ever ignores its "no brackets" guard rail.
     const subject = `Boardwave intro: ${requester.name} and ${chosenMember.name}`
-    const bodyLines = [
-      intro.trim(),
-      "",
-      "",
-      "[Internal team note, remove before sending]",
-      teamNote.trim(),
-    ]
-    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`
+    const cleaned = intro
+      .split("\n")
+      .filter((line) => !/^\s*\[.+\]\s*$/.test(line))
+      .join("\n")
+      .trim()
+    const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(cleaned)}`
     window.location.href = href
   }
 
@@ -115,8 +113,8 @@ export default function IntroPreview({
         <label className="mt-4 block">
           <span className="text-sm font-medium text-ink">Team note (internal)</span>
           <p className="text-xs text-muted">
-            Goes to the Boardwave team alongside the intro for context.
-            Strip before sending if you use the email button.
+            Stays internal. In v2 this lands in the team's review channel
+            alongside the intro. Never sent to the recipients.
           </p>
           <textarea
             value={teamNote}

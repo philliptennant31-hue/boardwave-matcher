@@ -33,12 +33,17 @@ export default function WeightingPanel({ weighting }: { weighting: Weighting }) 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between text-left"
+        className="flex w-full items-start justify-between gap-3 text-left"
       >
-        <span className="font-display text-base font-semibold tracking-tight text-ink">
-          How we weighted this brief
-        </span>
-        <span className="text-xs text-muted">{open ? "Hide" : "Show"}</span>
+        <div>
+          <div className="font-display text-base font-semibold tracking-tight text-ink">
+            How we weighted this brief
+          </div>
+          <div className="mt-0.5 text-xs text-muted">
+            Recalibrated for every brief. Different challenges get different priorities.
+          </div>
+        </div>
+        <span className="shrink-0 pt-0.5 text-xs text-muted">{open ? "Hide" : "Show"}</span>
       </button>
 
       {open && (
