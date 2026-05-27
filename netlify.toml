@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions."match"]
+  timeout = 30
+
+[functions."draft-intro"]
+  timeout = 30
+
+[functions."decisions"]
+  timeout = 10
+
+[functions."reset-demo"]
+  timeout = 30
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
