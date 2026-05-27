@@ -2,6 +2,7 @@ import { useState } from "react"
 import type { Factor, FactorBreakdown, Match } from "../lib/types.ts"
 import Lightbox from "./Lightbox.tsx"
 import MemberProfileCard from "./MemberProfileCard.tsx"
+import MemberAvatar from "./MemberAvatar.tsx"
 
 const FACTOR_LABELS: Record<keyof FactorBreakdown, string> = {
   challenge: "Challenge match",
@@ -32,6 +33,37 @@ function scoreTone(s: number): string {
   return "text-muted"
 }
 
+/**
+ * Score badge tint by tier. Reinforces the per-card score at a glance:
+ * deep green for outstanding, brand coral for strong, amber for mid, muted
+ * grey for weak. Keeps the brand palette dominant for the majority case.
+ */
+function scoreBadgeClasses(score: number): { box: string; label: string; value: string } {
+  if (score >= 90)
+    return {
+      box: "bg-positive/10 border border-positive/20",
+      label: "text-positive",
+      value: "text-positive",
+    }
+  if (score >= 80)
+    return {
+      box: "bg-accent-soft border border-accent/20",
+      label: "text-accent-strong",
+      value: "text-accent-strong",
+    }
+  if (score >= 70)
+    return {
+      box: "bg-warn/10 border border-warn/20",
+      label: "text-warn",
+      value: "text-warn",
+    }
+  return {
+    box: "bg-subtle border border-line",
+    label: "text-muted",
+    value: "text-ink/70",
+  }
+}
+
 function FactorCell({ label, factor }: { label: string; factor: Factor }) {
   return (
     <div className="rounded-lg border border-line bg-subtle p-3">
@@ -46,16 +78,22 @@ function FactorCell({ label, factor }: { label: string; factor: Factor }) {
 
 export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
   const [profileOpen, setProfileOpen] = useState(false)
+  const badge = scoreBadgeClasses(match.score)
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <button
-            type="button"
-            onClick={() => setProfileOpen(true)}
-            className="text-left"
-          >
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center gap-3 text-left"
+        >
+          <MemberAvatar
+            name={match.name}
+            slug={match.member?.slug}
+            size="md"
+          />
+          <div>
             <h3 className="font-display text-xl font-semibold tracking-tight transition hover:text-accent-strong">
               {match.name}
             </h3>
@@ -63,11 +101,13 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
               {match.company}
               <span className="ml-2 text-xs text-accent-strong/80">View profile</span>
             </p>
-          </button>
-        </div>
-        <div className="rounded-xl bg-accent-soft px-3 py-2 text-center">
-          <div className="text-xs font-medium uppercase tracking-wide text-accent-strong">Score</div>
-          <div className="font-display text-3xl font-semibold leading-none text-accent-strong">
+          </div>
+        </button>
+        <div className={`rounded-xl px-3 py-2 text-center ${badge.box}`}>
+          <div className={`text-xs font-medium uppercase tracking-wide ${badge.label}`}>
+            Score
+          </div>
+          <div className={`font-display text-3xl font-semibold leading-none ${badge.value}`}>
             {match.score}
           </div>
         </div>

@@ -1,5 +1,6 @@
 import type { Member, Stage } from "../lib/types.ts"
 import { getEngagementFor } from "../lib/engagement.ts"
+import MemberAvatar from "./MemberAvatar.tsx"
 
 const STAGE_LABELS: Record<Stage, string> = {
   "pre-seed": "Pre-seed",
@@ -8,6 +9,21 @@ const STAGE_LABELS: Record<Stage, string> = {
   "series-b": "Series B",
   "series-c": "Series C",
   "exit": "Exited",
+}
+
+/**
+ * Stage chip colour-coding. Cool tones for earlier stages, brand coral for
+ * the late-Series core that the directory is centred on, and gold for
+ * exited founders. Each chip uses a soft bg + a darker text tone for
+ * legibility while staying calm.
+ */
+const STAGE_CLASSES: Record<Stage, string> = {
+  "pre-seed": "bg-slate-100 text-slate-700",
+  "seed": "bg-sky-100 text-sky-700",
+  "series-a": "bg-indigo-100 text-indigo-700",
+  "series-b": "bg-accent-soft text-accent-strong",
+  "series-c": "bg-rose-100 text-rose-700",
+  "exit": "bg-amber-100 text-amber-700",
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
@@ -45,18 +61,31 @@ export default function MemberProfileCard({ member, compact }: Props) {
       }`}
     >
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className={`font-display font-semibold tracking-tight ${compact ? "text-lg" : "text-2xl"}`}>
-            {member.name}
-          </h3>
-          <p className="text-sm text-muted">
-            {member.role ? `${member.role}, ` : ""}
-            {member.company}
-            {member.geography ? ` · ${member.geography}` : ""}
-          </p>
+        <div className="flex items-start gap-3">
+          <MemberAvatar
+            name={member.name}
+            slug={member.slug}
+            size={compact ? "md" : "lg"}
+          />
+          <div>
+            <h3
+              className={`font-display font-semibold tracking-tight ${
+                compact ? "text-lg" : "text-2xl"
+              }`}
+            >
+              {member.name}
+            </h3>
+            <p className="text-sm text-muted">
+              {member.role ? `${member.role}, ` : ""}
+              {member.company}
+              {member.geography ? ` · ${member.geography}` : ""}
+            </p>
+          </div>
         </div>
         {member.stage && (
-          <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${STAGE_CLASSES[member.stage]}`}
+          >
             {STAGE_LABELS[member.stage]}
           </span>
         )}

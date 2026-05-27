@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react"
 import type { Decision } from "../lib/types.ts"
+import MemberAvatar from "./MemberAvatar.tsx"
 
 function outcomeChip(outcome: Decision["outcome"]) {
   const map: Record<Decision["outcome"], { label: string; cls: string }> = {
@@ -24,12 +25,23 @@ function formatTimestamp(ts: string): string {
   }
 }
 
-function NameAndCompany({ name, company }: { name: string | null; company: string | null }) {
+function NameAndCompany({
+  name,
+  company,
+  showAvatar,
+}: {
+  name: string | null
+  company: string | null
+  showAvatar?: boolean
+}) {
   if (!name && !company) return <span className="text-muted">-</span>
   return (
-    <div className="leading-tight">
-      <div className="font-medium text-ink">{name ?? "-"}</div>
-      {company && <div className="text-xs text-muted">{company}</div>}
+    <div className="flex items-center gap-2.5 leading-tight">
+      {showAvatar && name && <MemberAvatar name={name} size="sm" />}
+      <div>
+        <div className="font-medium text-ink">{name ?? "-"}</div>
+        {company && <div className="text-xs text-muted">{company}</div>}
+      </div>
     </div>
   )
 }
@@ -85,14 +97,21 @@ export default function DecisionsTable({ decisions, onResume }: Props) {
                     {formatTimestamp(d.created_at)}
                   </td>
                   <td className="px-5 py-3">
-                    <NameAndCompany name={d.requester_name} company={d.requester_company} />
+                    <NameAndCompany
+                      name={d.requester_name}
+                      company={d.requester_company}
+                    />
                   </td>
                   <td className="px-5 py-3 text-ink/80">
                     <p className="line-clamp-2 max-w-prose leading-snug">{d.need}</p>
                   </td>
                   <td className="px-5 py-3">
                     {d.chosen_member ? (
-                      <NameAndCompany name={d.chosen_member.name} company={d.chosen_member.company} />
+                      <NameAndCompany
+                        name={d.chosen_member.name}
+                        company={d.chosen_member.company}
+                        showAvatar
+                      />
                     ) : (
                       <span className="text-muted">-</span>
                     )}
