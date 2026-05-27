@@ -205,7 +205,7 @@ export default function IntroPreview({
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-ink/80">
             You haven&rsquo;t edited the intro. Saving will lock in the AI
-            version as the canonical intro for this decision.
+            version as the final intro for this decision.
           </p>
           <div className="mt-6 flex justify-end gap-2">
             <button
