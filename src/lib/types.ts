@@ -42,6 +42,9 @@ export type Match = {
   score: number
   factor_breakdown: FactorBreakdown
   summary: string
+  /** Full directory record for the matched member. Attached server-side by
+   * the match function so the lightbox can render without a round-trip. */
+  member: Member
 }
 
 export type Weighting = {

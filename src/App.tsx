@@ -7,6 +7,12 @@ import BrandMark from "./components/BrandMark.tsx"
 import TenphiWordmark from "./components/TenphiWordmark.tsx"
 import TenphiMark from "./components/TenphiMark.tsx"
 import type { Decision } from "./lib/types.ts"
+import {
+  initialMatchState,
+  loadMatchState,
+  saveMatchState,
+  type MatchState,
+} from "./lib/matchState.ts"
 
 function getPath(): string {
   if (typeof window === "undefined") return "/"
@@ -16,6 +22,15 @@ function getPath(): string {
 export default function App() {
   const [path, setPath] = useState(getPath())
   const [resumed, setResumed] = useState<Decision | null>(null)
+
+  // Match state lives at the App level so it survives navigation between
+  // tabs. sessionStorage adds durability across page refresh in the same
+  // tab/window.
+  const [matchState, setMatchState] = useState<MatchState>(() => loadMatchState())
+
+  useEffect(() => {
+    saveMatchState(matchState)
+  }, [matchState])
 
   useEffect(() => {
     const onPop = () => setPath(getPath())
@@ -32,6 +47,10 @@ export default function App() {
   function resumeDecision(d: Decision) {
     setResumed(d)
     navigate("/")
+  }
+
+  function resetMatch() {
+    setMatchState(initialMatchState)
   }
 
   const NavLink = ({ to, label }: { to: string; label: string }) => {
@@ -51,10 +70,13 @@ export default function App() {
     )
   }
 
+  // Decisions page carries six columns and needs a slightly wider container.
+  const mainMaxWidth = path === "/decisions" ? "max-w-6xl" : "max-w-5xl"
+
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -90,20 +112,23 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className={`mx-auto ${mainMaxWidth} px-6 py-10`}>
         {path === "/decisions" ? (
           <DecisionsPage onResumeDecision={resumeDecision} />
         ) : path === "/directory" ? (
           <DirectoryPage />
         ) : (
           <MatchPage
+            state={matchState}
+            onStateChange={setMatchState}
+            onReset={resetMatch}
             resumed={resumed}
             onResumedConsumed={() => setResumed(null)}
           />
         )}
       </main>
 
-      <footer className="mx-auto max-w-5xl px-6 py-12">
+      <footer className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex items-center gap-2 text-xs text-muted">
             <TenphiMark className="h-6 w-auto opacity-90" />

@@ -10,7 +10,7 @@ function outcomeChip(outcome: Decision["outcome"]) {
   }
   const v = map[outcome]
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${v.cls}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${v.cls}`}>
       {v.label}
     </span>
   )
@@ -22,6 +22,16 @@ function formatTimestamp(ts: string): string {
   } catch {
     return ts
   }
+}
+
+function NameAndCompany({ name, company }: { name: string | null; company: string | null }) {
+  if (!name && !company) return <span className="text-muted">-</span>
+  return (
+    <div className="leading-tight">
+      <div className="font-medium text-ink">{name ?? "-"}</div>
+      {company && <div className="text-xs text-muted">{company}</div>}
+    </div>
+  )
 }
 
 type Props = {
@@ -43,6 +53,14 @@ export default function DecisionsTable({ decisions, onResume }: Props) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface">
       <table className="w-full text-left text-sm">
+        <colgroup>
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "18%" }} />
+          <col />
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "9%" }} />
+        </colgroup>
         <thead className="border-b border-line bg-subtle text-xs uppercase tracking-wide text-muted">
           <tr>
             <th className="px-5 py-3 font-medium">Logged</th>
@@ -61,28 +79,26 @@ export default function DecisionsTable({ decisions, onResume }: Props) {
               <Fragment key={d.id}>
                 <tr
                   onClick={() => setOpenId(open ? null : d.id)}
-                  className="cursor-pointer border-b border-line transition last:border-0 hover:bg-subtle"
+                  className="cursor-pointer border-b border-line align-top transition last:border-0 hover:bg-subtle"
                 >
-                  <td className="px-5 py-3 text-xs text-muted">{formatTimestamp(d.created_at)}</td>
-                  <td className="px-5 py-3 text-ink">
-                    {d.requester_name ?? "-"}
-                    {d.requester_company && (
-                      <span className="text-muted"> · {d.requester_company}</span>
-                    )}
+                  <td className="whitespace-nowrap px-5 py-3 text-xs text-muted">
+                    {formatTimestamp(d.created_at)}
                   </td>
-                  <td className="max-w-md truncate px-5 py-3 text-ink/80">{d.need}</td>
-                  <td className="px-5 py-3 text-ink">
+                  <td className="px-5 py-3">
+                    <NameAndCompany name={d.requester_name} company={d.requester_company} />
+                  </td>
+                  <td className="px-5 py-3 text-ink/80">
+                    <p className="line-clamp-2 max-w-prose leading-snug">{d.need}</p>
+                  </td>
+                  <td className="px-5 py-3">
                     {d.chosen_member ? (
-                      <>
-                        {d.chosen_member.name}
-                        <span className="text-muted"> · {d.chosen_member.company}</span>
-                      </>
+                      <NameAndCompany name={d.chosen_member.name} company={d.chosen_member.company} />
                     ) : (
                       <span className="text-muted">-</span>
                     )}
                   </td>
                   <td className="px-5 py-3">{outcomeChip(d.outcome)}</td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-5 py-3 pr-6 text-right">
                     {canResume ? (
                       <button
                         type="button"
@@ -90,7 +106,7 @@ export default function DecisionsTable({ decisions, onResume }: Props) {
                           e.stopPropagation()
                           onResume(d)
                         }}
-                        className="rounded-md border border-accent-strong/30 bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong transition hover:bg-accent-soft/70"
+                        className="whitespace-nowrap rounded-md border border-accent-strong/30 bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong transition hover:bg-accent-soft/70"
                       >
                         Resume
                       </button>

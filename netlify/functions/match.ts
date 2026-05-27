@@ -437,6 +437,17 @@ export default async (req: Request, _context: Context) => {
     // Ensure descending by score.
     sanitized.matches.sort((a, b) => b.score - a.score)
 
+    // Enrich each match with the full member record so the client lightbox
+    // can render the profile without a second round-trip. We already loaded
+    // the directory above, so this is just an in-memory lookup.
+    const directoryById = new Map(
+      (directory as DirectoryMember[]).map((m) => [m.id, m]),
+    )
+    const enrichedMatches = sanitized.matches.map((m) => {
+      const dir = directoryById.get(m.member_id)
+      return dir ? { ...m, member: dir } : m
+    })
+
     const weighting = {
       reasoning: sanitized.weighting_reasoning,
       weights: sanitized.weights,
@@ -452,7 +463,7 @@ export default async (req: Request, _context: Context) => {
           requester_company: requesterCompany,
           need,
           weighting,
-          suggested_matches: sanitized.matches,
+          suggested_matches: enrichedMatches,
           excluded_ids,
           attempt_count: attempt,
           outcome: "pending",
@@ -472,7 +483,7 @@ export default async (req: Request, _context: Context) => {
         .from("decisions")
         .update({
           weighting,
-          suggested_matches: sanitized.matches,
+          suggested_matches: enrichedMatches,
           excluded_ids,
           attempt_count: attempt,
         })
@@ -488,7 +499,7 @@ export default async (req: Request, _context: Context) => {
 
     const generatedInMs = Math.round(performance.now() - start)
     console.log(
-      `match: attempt ${attempt}, ${sanitized.matches.length} matches, weights sum ${ws}, ${generatedInMs}ms`,
+      `match: attempt ${attempt}, ${enrichedMatches.length} matches, weights sum ${ws}, ${generatedInMs}ms`,
     )
 
     return Response.json({
@@ -496,7 +507,7 @@ export default async (req: Request, _context: Context) => {
       decision_id: resultDecisionId,
       attempt,
       weighting,
-      matches: sanitized.matches,
+      matches: enrichedMatches,
       generatedInMs,
     })
   } catch (err) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import NeedForm from "../components/NeedForm.tsx"
 import WeightingPanel from "../components/WeightingPanel.tsx"
 import MatchList from "../components/MatchList.tsx"
@@ -9,43 +9,24 @@ import type {
   Decision,
   Match,
   Requester,
-  Weighting,
 } from "../lib/types.ts"
-
-type Status =
-  | "idle"
-  | "matching"
-  | "reviewing"
-  | "drafting"
-  | "drafted"
-  | "exhausted"
-  | "error"
+import type { MatchState } from "../lib/matchState.ts"
 
 type Props = {
+  state: MatchState
+  onStateChange: (next: MatchState) => void
+  onReset: () => void
   resumed: Decision | null
   onResumedConsumed: () => void
 }
 
-export default function MatchPage({ resumed, onResumedConsumed }: Props) {
-  const [status, setStatus] = useState<Status>("idle")
-  const [error, setError] = useState<string | null>(null)
-
-  // Need + requester captured on submit.
-  const [need, setNeed] = useState<string>("")
-  const [requester, setRequester] = useState<Requester>({ name: "", company: "" })
-
-  // Match state.
-  const [decisionId, setDecisionId] = useState<string | null>(null)
-  const [attempt, setAttempt] = useState<1 | 2 | 3>(1)
-  const [excludedIds, setExcludedIds] = useState<string[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
-  const [weighting, setWeighting] = useState<Weighting | null>(null)
-
-  // Drafted intro state.
-  const [chosen, setChosen] = useState<Match | null>(null)
-  const [intro, setIntro] = useState<string>("")
-  const [teamNote, setTeamNote] = useState<string>("")
-
+export default function MatchPage({
+  state,
+  onStateChange,
+  onReset,
+  resumed,
+  onResumedConsumed,
+}: Props) {
   // Hydrate from a resumed decision pushed by the Decisions log.
   useEffect(() => {
     if (!resumed) return
@@ -54,42 +35,31 @@ export default function MatchPage({ resumed, onResumedConsumed }: Props) {
       resumed.suggested_matches?.length &&
       resumed.weighting
     ) {
-      setNeed(resumed.need)
-      setRequester({
-        name: resumed.requester_name ?? "",
-        company: resumed.requester_company ?? "",
-      })
-      setDecisionId(resumed.id)
-      setAttempt(
-        (resumed.attempt_count >= 1 && resumed.attempt_count <= 3
+      onStateChange({
+        status: "reviewing",
+        error: null,
+        need: resumed.need,
+        requester: {
+          name: resumed.requester_name ?? "",
+          company: resumed.requester_company ?? "",
+        },
+        decisionId: resumed.id,
+        attempt: (resumed.attempt_count >= 1 && resumed.attempt_count <= 3
           ? resumed.attempt_count
           : 1) as 1 | 2 | 3,
-      )
-      setExcludedIds(resumed.excluded_ids ?? [])
-      setMatches(resumed.suggested_matches)
-      setWeighting(resumed.weighting)
-      setChosen(null)
-      setIntro("")
-      setTeamNote("")
-      setError(null)
-      setStatus("reviewing")
+        excludedIds: resumed.excluded_ids ?? [],
+        matches: resumed.suggested_matches,
+        weighting: resumed.weighting,
+        chosen: null,
+        intro: "",
+        teamNote: "",
+      })
     }
     onResumedConsumed()
-  }, [resumed, onResumedConsumed])
+  }, [resumed, onResumedConsumed, onStateChange])
 
-  function reset() {
-    setStatus("idle")
-    setError(null)
-    setNeed("")
-    setRequester({ name: "", company: "" })
-    setDecisionId(null)
-    setAttempt(1)
-    setExcludedIds([])
-    setMatches([])
-    setWeighting(null)
-    setChosen(null)
-    setIntro("")
-    setTeamNote("")
+  function patch(p: Partial<MatchState>) {
+    onStateChange({ ...state, ...p })
   }
 
   async function runMatch(args: {
@@ -99,8 +69,7 @@ export default function MatchPage({ resumed, onResumedConsumed }: Props) {
     attempt: 1 | 2 | 3
     decision_id: string | null
   }) {
-    setStatus("matching")
-    setError(null)
+    patch({ status: "matching", error: null })
     try {
       const res = await postMatch({
         need: args.need,
@@ -110,30 +79,39 @@ export default function MatchPage({ resumed, onResumedConsumed }: Props) {
         decision_id: args.decision_id ?? undefined,
       })
       if ("ok" in res && res.ok) {
-        setDecisionId(res.decision_id)
-        setAttempt(res.attempt)
-        setMatches(res.matches)
-        setWeighting(res.weighting)
-        setStatus("reviewing")
-      } else if ("ok" in res && !res.ok && (res as { code?: string }).code === "exhausted") {
-        setStatus("exhausted")
+        patch({
+          status: "reviewing",
+          decisionId: res.decision_id,
+          attempt: res.attempt,
+          matches: res.matches,
+          weighting: res.weighting,
+        })
+      } else if (
+        "ok" in res &&
+        !res.ok &&
+        (res as { code?: string }).code === "exhausted"
+      ) {
+        patch({ status: "exhausted" })
       } else {
         const msg = "error" in res ? res.error : "Unknown error"
-        setError(msg)
-        setStatus("error")
+        patch({ status: "error", error: msg })
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-      setStatus("error")
+      patch({
+        status: "error",
+        error: e instanceof Error ? e.message : String(e),
+      })
     }
   }
 
   function handleSubmit(needIn: string, requesterIn: Requester) {
-    setNeed(needIn)
-    setRequester(requesterIn)
-    setExcludedIds([])
-    setAttempt(1)
-    setDecisionId(null)
+    patch({
+      need: needIn,
+      requester: requesterIn,
+      excludedIds: [],
+      attempt: 1,
+      decisionId: null,
+    })
     runMatch({
       need: needIn,
       requester: requesterIn,
@@ -144,56 +122,61 @@ export default function MatchPage({ resumed, onResumedConsumed }: Props) {
   }
 
   function handleRejectOne(memberId: string) {
-    setMatches((prev) => prev.filter((m) => m.member_id !== memberId))
+    patch({ matches: state.matches.filter((m) => m.member_id !== memberId) })
   }
 
   function handleRejectAll() {
-    if (attempt >= 3) {
-      if (decisionId) {
-        patchDecision({ id: decisionId, outcome: "rejected_all" }).catch(() => {})
+    if (state.attempt >= 3) {
+      if (state.decisionId) {
+        patchDecision({ id: state.decisionId, outcome: "rejected_all" }).catch(
+          () => {},
+        )
       }
-      setStatus("exhausted")
+      patch({ status: "exhausted" })
       return
     }
     const newExcluded = [
-      ...excludedIds,
-      ...matches.map((m) => m.member_id),
+      ...state.excludedIds,
+      ...state.matches.map((m) => m.member_id),
     ]
-    const nextAttempt = (attempt + 1) as 1 | 2 | 3
-    setExcludedIds(newExcluded)
+    const nextAttempt = (state.attempt + 1) as 1 | 2 | 3
+    patch({ excludedIds: newExcluded })
     runMatch({
-      need,
-      requester,
+      need: state.need,
+      requester: state.requester,
       excluded_ids: newExcluded,
       attempt: nextAttempt,
-      decision_id: decisionId,
+      decision_id: state.decisionId,
     })
   }
 
   async function handleApprove(m: Match) {
-    if (!decisionId) return
-    setStatus("drafting")
-    setChosen(m)
-    setError(null)
+    if (!state.decisionId) return
+    patch({ status: "drafting", chosen: m, error: null })
     try {
-      const res = await postDraftIntro(decisionId, m.member_id)
+      const res = await postDraftIntro(state.decisionId, m.member_id)
       if (!res.ok) throw new Error(res.error)
-      setIntro(res.intro)
-      setTeamNote(res.team_note)
-      setStatus("drafted")
+      patch({
+        status: "drafted",
+        chosen: m,
+        intro: res.intro,
+        teamNote: res.team_note,
+      })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-      setStatus("error")
+      patch({
+        status: "error",
+        error: e instanceof Error ? e.message : String(e),
+      })
     }
   }
 
   return (
     <div className="space-y-8">
-      {status === "idle" && (
+      {state.status === "idle" && (
         <NeedForm onSubmit={handleSubmit} submitting={false} />
       )}
 
-      {status === "matching" && (
+      {state.status === "matching" && (
         <div className="rounded-2xl border border-line bg-surface p-10 text-center">
           <div className="font-display text-xl font-semibold tracking-tight">
             Reading the directory and scoring matches.
@@ -204,63 +187,66 @@ export default function MatchPage({ resumed, onResumedConsumed }: Props) {
         </div>
       )}
 
-      {(status === "reviewing" || status === "drafting") && weighting && (
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-line bg-surface p-6">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted">
-              The challenge
+      {(state.status === "reviewing" || state.status === "drafting") &&
+        state.weighting && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-line bg-surface p-6">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted">
+                The challenge
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-ink/85">
+                {state.need}
+              </p>
+              <p className="mt-3 text-xs text-muted">
+                From {state.requester.name} at {state.requester.company}.
+              </p>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-ink/85">{need}</p>
-            <p className="mt-3 text-xs text-muted">
-              From {requester.name} at {requester.company}.
-            </p>
-          </div>
-          <WeightingPanel weighting={weighting} />
-          <MatchList
-            matches={matches}
-            attempt={attempt}
-            onApprove={handleApprove}
-            onReject={handleRejectOne}
-            onRejectAll={handleRejectAll}
-            busy={status === "drafting"}
-          />
-          {matches.length === 0 && (
-            <EmptyState
-              title="All cards rejected this round"
-              message="Tap Reject all and retry to surface a fresh three, or start a new brief."
-              actionLabel="Start over"
-              onAction={reset}
+            <WeightingPanel weighting={state.weighting} />
+            <MatchList
+              matches={state.matches}
+              attempt={state.attempt}
+              onApprove={handleApprove}
+              onReject={handleRejectOne}
+              onRejectAll={handleRejectAll}
+              busy={state.status === "drafting"}
             />
-          )}
-        </div>
-      )}
+            {state.matches.length === 0 && (
+              <EmptyState
+                title="All cards rejected this round"
+                message="Tap Reject all and retry to surface a fresh three, or start a new brief."
+                actionLabel="Start over"
+                onAction={onReset}
+              />
+            )}
+          </div>
+        )}
 
-      {status === "drafted" && chosen && decisionId && (
+      {state.status === "drafted" && state.chosen && state.decisionId && (
         <IntroPreview
-          decisionId={decisionId}
-          chosenMember={chosen}
-          requester={requester}
-          initialIntro={intro}
-          initialTeamNote={teamNote}
-          onFinish={reset}
+          decisionId={state.decisionId}
+          chosenMember={state.chosen}
+          requester={state.requester}
+          initialIntro={state.intro}
+          initialTeamNote={state.teamNote}
+          onFinish={onReset}
         />
       )}
 
-      {status === "exhausted" && (
+      {state.status === "exhausted" && (
         <EmptyState
           title="No more strong matches"
           message="You've worked through three rounds of suggestions. Try broadening the brief, easing the rejection criteria, or starting fresh."
           actionLabel="Start a new brief"
-          onAction={reset}
+          onAction={onReset}
         />
       )}
 
-      {status === "error" && (
+      {state.status === "error" && (
         <EmptyState
           title="Something went wrong"
-          message={error ?? "Unknown error."}
+          message={state.error ?? "Unknown error."}
           actionLabel="Try again"
-          onAction={reset}
+          onAction={onReset}
         />
       )}
     </div>

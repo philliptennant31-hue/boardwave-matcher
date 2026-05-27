@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react"
-import type { Factor, FactorBreakdown, Match, Member } from "../lib/types.ts"
-import { supabase } from "../lib/supabase.ts"
+import { useState } from "react"
+import type { Factor, FactorBreakdown, Match } from "../lib/types.ts"
 import Lightbox from "./Lightbox.tsx"
 import MemberProfileCard from "./MemberProfileCard.tsx"
 
@@ -47,30 +46,6 @@ function FactorCell({ label, factor }: { label: string; factor: Factor }) {
 
 export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
   const [profileOpen, setProfileOpen] = useState(false)
-  const [member, setMember] = useState<Member | null>(null)
-  const [loadingProfile, setLoadingProfile] = useState(false)
-
-  // Lazy-load the full profile only when the user opens the lightbox.
-  useEffect(() => {
-    if (!profileOpen || member || loadingProfile || !supabase) return
-    setLoadingProfile(true)
-    let alive = true
-    ;(async () => {
-      try {
-        const { data } = await supabase!
-          .from("members")
-          .select("*")
-          .eq("id", match.member_id)
-          .single()
-        if (alive && data) setMember(data as Member)
-      } finally {
-        if (alive) setLoadingProfile(false)
-      }
-    })()
-    return () => {
-      alive = false
-    }
-  }, [profileOpen, member, loadingProfile, match.member_id])
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-6">
@@ -130,10 +105,12 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
         onClose={() => setProfileOpen(false)}
         ariaLabel={`${match.name} profile`}
       >
-        {member ? (
-          <MemberProfileCard member={member} />
+        {match.member ? (
+          <MemberProfileCard member={match.member} />
         ) : (
-          <div className="p-10 text-center text-sm text-muted">Loading profile.</div>
+          <div className="p-10 text-center text-sm text-muted">
+            Profile not available for this match.
+          </div>
         )}
       </Lightbox>
     </div>

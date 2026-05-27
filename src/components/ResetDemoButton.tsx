@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { postResetDemo } from "../lib/api.ts"
+import { clearMatchState } from "../lib/matchState.ts"
 
 function isResetEnabled(): boolean {
   if (import.meta.env.VITE_DEMO_RESET === "1") return true
@@ -25,6 +26,8 @@ export default function ResetDemoButton() {
     try {
       const res = await postResetDemo()
       if (!res.ok) throw new Error(res.error)
+      // Drop any in-tab match state that could reference now-deleted decisions.
+      clearMatchState()
       setStatus(`Reset. ${res.members} members reseeded.`)
       setTimeout(() => window.location.reload(), 1200)
     } catch (e) {
