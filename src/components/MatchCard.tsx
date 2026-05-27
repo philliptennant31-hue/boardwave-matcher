@@ -1,4 +1,8 @@
-import type { Factor, FactorBreakdown, Match } from "../lib/types.ts"
+import { useEffect, useState } from "react"
+import type { Factor, FactorBreakdown, Match, Member } from "../lib/types.ts"
+import { supabase } from "../lib/supabase.ts"
+import Lightbox from "./Lightbox.tsx"
+import MemberProfileCard from "./MemberProfileCard.tsx"
 
 const FACTOR_LABELS: Record<keyof FactorBreakdown, string> = {
   challenge: "Challenge match",
@@ -31,7 +35,7 @@ function scoreTone(s: number): string {
 
 function FactorCell({ label, factor }: { label: string; factor: Factor }) {
   return (
-    <div className="rounded-lg border border-line bg-canvas p-3">
+    <div className="rounded-lg border border-line bg-subtle p-3">
       <div className="text-xs font-medium text-muted">{label}</div>
       <div className={`mt-1 text-lg font-semibold ${scoreTone(factor.score)}`}>
         {factor.score}
@@ -42,16 +46,53 @@ function FactorCell({ label, factor }: { label: string; factor: Factor }) {
 }
 
 export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [member, setMember] = useState<Member | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
+
+  // Lazy-load the full profile only when the user opens the lightbox.
+  useEffect(() => {
+    if (!profileOpen || member || loadingProfile || !supabase) return
+    setLoadingProfile(true)
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await supabase!
+          .from("members")
+          .select("*")
+          .eq("id", match.member_id)
+          .single()
+        if (alive && data) setMember(data as Member)
+      } finally {
+        if (alive) setLoadingProfile(false)
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [profileOpen, member, loadingProfile, match.member_id])
+
   return (
     <div className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="font-display text-lg font-semibold tracking-tight">{match.name}</h3>
-          <p className="text-sm text-muted">{match.company}</p>
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className="text-left"
+          >
+            <h3 className="font-display text-xl font-semibold tracking-tight transition hover:text-accent-strong">
+              {match.name}
+            </h3>
+            <p className="text-sm text-muted">
+              {match.company}
+              <span className="ml-2 text-xs text-accent-strong/80">View profile</span>
+            </p>
+          </button>
         </div>
         <div className="rounded-xl bg-accent-soft px-3 py-2 text-center">
-          <div className="text-xs font-medium uppercase tracking-wide text-accent">Score</div>
-          <div className="font-display text-2xl font-semibold leading-none text-accent">
+          <div className="text-xs font-medium uppercase tracking-wide text-accent-strong">Score</div>
+          <div className="font-display text-3xl font-semibold leading-none text-accent-strong">
             {match.score}
           </div>
         </div>
@@ -78,11 +119,23 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
           type="button"
           onClick={onApprove}
           disabled={busy}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-gradient px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
         >
           Approve
         </button>
       </div>
+
+      <Lightbox
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        ariaLabel={`${match.name} profile`}
+      >
+        {member ? (
+          <MemberProfileCard member={member} />
+        ) : (
+          <div className="p-10 text-center text-sm text-muted">Loading profile.</div>
+        )}
+      </Lightbox>
     </div>
   )
 }

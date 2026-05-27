@@ -7,7 +7,7 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6"
 
 const SYSTEM_PROMPT = `You write peer-to-peer intros for Boardwave, a private community of senior software founders and CEOs who help each other through their hardest business decisions. Use the draft_intro tool to return your result.
 
-The intros sit in between two busy operators. They are warm, brief, specific, and never salesy. Two to four sentences. They name the requester's challenge in passing — not a recap, just enough to anchor — and reference one or two specific things about the matched member that make them the right person. They frame the connection as TWO-WAY: what each side has to gain. Connections should never read as a favour.
+The intros sit in between two busy operators. They are warm, brief, specific, and never salesy. Two to four sentences. They name the requester's challenge in passing (not a recap, just enough to anchor) and reference one or two specific things about the matched member that make them the right person. They frame the connection as TWO-WAY: what each side has to gain. Connections should never read as a favour.
 
 You also write a short team_note: a one or two sentence INTERNAL context the Boardwave team sees alongside the intro before they decide to send it. This is for them, not for the recipients. It captures the matching logic in plain English so they can sanity-check. Internal language, no salutations, no signoffs.
 
@@ -41,6 +41,14 @@ function isDraftResult(v: unknown): v is DraftResult {
   if (!v || typeof v !== "object") return false
   const r = v as Record<string, unknown>
   return typeof r.intro === "string" && typeof r.team_note === "string"
+}
+
+/**
+ * Strip em dashes (U+2014) and en dashes (U+2013). Belt-and-braces with the
+ * prompt rule. The model occasionally still slips one in.
+ */
+function stripDashes(s: string): string {
+  return s.replace(/\s*[—–]\s*/g, ", ").replace(/[—–]/g, "-")
 }
 
 export default async (req: Request, _context: Context) => {
@@ -165,12 +173,15 @@ export default async (req: Request, _context: Context) => {
       )
     }
 
+    const cleanIntro = stripDashes(parsed.intro)
+    const cleanTeamNote = stripDashes(parsed.team_note)
+
     const { error: upErr } = await supabase
       .from("decisions")
       .update({
         chosen_member_id: chosenMemberId,
-        intro_text: parsed.intro,
-        team_note: parsed.team_note,
+        intro_text: cleanIntro,
+        team_note: cleanTeamNote,
         outcome: "approved",
       })
       .eq("id", decisionId)
@@ -186,8 +197,8 @@ export default async (req: Request, _context: Context) => {
     console.log(`draft-intro: ${generatedInMs}ms, decision ${decisionId}`)
     return Response.json({
       ok: true,
-      intro: parsed.intro,
-      team_note: parsed.team_note,
+      intro: cleanIntro,
+      team_note: cleanTeamNote,
       generatedInMs,
     })
   } catch (err) {

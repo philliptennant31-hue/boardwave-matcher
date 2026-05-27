@@ -1,6 +1,6 @@
 # Boardwave Member Matcher
 
-Interview-demo tool. A community team raises a member's business challenge, the tool finds the three best-placed peers from a 12-person directory, scores each with explainable reasoning, and — once a human approves a match — drafts a warm peer-to-peer intro for that single match. Every decision is logged.
+Interview-demo tool. A community team raises a member's business challenge, the tool finds the three best-placed peers from a 12-person directory, scores each with explainable reasoning, and once a human approves a match drafts a warm peer-to-peer intro for that single match. Every decision is logged.
 
 ## Stack
 
@@ -23,4 +23,4 @@ netlify dev        # Vite + functions on a single port
 
 ## Security posture
 
-Demo only. No auth — open URL. Supabase service role key is server-side only and must never have a `VITE_` prefix. RLS is enabled on both tables: `members` is public-read; `decisions` is accessible only via Netlify functions using the service role key.
+Demo only. No auth, open URL. Supabase service role key is server-side only and must never have a `VITE_` prefix. RLS is enabled on both tables: `members` is public-read; `decisions` is accessible only via Netlify functions using the service role key.

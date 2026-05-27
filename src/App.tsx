@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react"
 import MatchPage from "./pages/MatchPage.tsx"
 import DecisionsPage from "./pages/DecisionsPage.tsx"
+import DirectoryPage from "./pages/DirectoryPage.tsx"
 import ResetDemoButton from "./components/ResetDemoButton.tsx"
+import BrandMark from "./components/BrandMark.tsx"
+import type { Decision } from "./lib/types.ts"
 
 function getPath(): string {
   if (typeof window === "undefined") return "/"
@@ -10,6 +13,7 @@ function getPath(): string {
 
 export default function App() {
   const [path, setPath] = useState(getPath())
+  const [resumed, setResumed] = useState<Decision | null>(null)
 
   useEffect(() => {
     const onPop = () => setPath(getPath())
@@ -23,16 +27,21 @@ export default function App() {
     setPath(to)
   }
 
+  function resumeDecision(d: Decision) {
+    setResumed(d)
+    navigate("/")
+  }
+
   const NavLink = ({ to, label }: { to: string; label: string }) => {
     const active = path === to
     return (
       <button
         type="button"
         onClick={() => navigate(to)}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
           active
-            ? "bg-accent-soft text-accent"
-            : "text-muted hover:text-ink"
+            ? "bg-ink text-white"
+            : "text-ink/70 hover:text-ink"
         }`}
       >
         {label}
@@ -44,18 +53,22 @@ export default function App() {
     <div className="min-h-screen bg-canvas text-ink">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <div className="flex items-baseline gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="font-display text-xl font-semibold tracking-tight"
-            >
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2.5"
+          >
+            <BrandMark className="h-8 w-auto" />
+            <span className="font-display text-2xl font-semibold leading-none tracking-tight text-ink">
               Boardwave
-            </button>
-            <span className="text-sm text-muted">Member matcher</span>
-          </div>
+            </span>
+            <span className="ml-2 hidden text-sm text-muted sm:inline">
+              Member matcher
+            </span>
+          </button>
           <nav className="flex items-center gap-1">
             <NavLink to="/" label="Match" />
+            <NavLink to="/directory" label="Directory" />
             <NavLink to="/decisions" label="Decisions" />
             <div className="ml-2">
               <ResetDemoButton />
@@ -65,11 +78,20 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-10">
-        {path === "/decisions" ? <DecisionsPage /> : <MatchPage />}
+        {path === "/decisions" ? (
+          <DecisionsPage onResumeDecision={resumeDecision} />
+        ) : path === "/directory" ? (
+          <DirectoryPage />
+        ) : (
+          <MatchPage
+            resumed={resumed}
+            onResumedConsumed={() => setResumed(null)}
+          />
+        )}
       </main>
 
       <footer className="mx-auto max-w-5xl px-6 py-10 text-center text-xs text-muted">
-        Demo build. Nothing is sent automatically; every decision is logged for review.
+        Demo build. Nothing is sent automatically. Every decision is logged for review.
       </footer>
     </div>
   )

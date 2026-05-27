@@ -24,7 +24,12 @@ function formatTimestamp(ts: string): string {
   }
 }
 
-export default function DecisionsTable({ decisions }: { decisions: Decision[] }) {
+type Props = {
+  decisions: Decision[]
+  onResume: (d: Decision) => void
+}
+
+export default function DecisionsTable({ decisions, onResume }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   if (decisions.length === 0) {
@@ -45,11 +50,13 @@ export default function DecisionsTable({ decisions }: { decisions: Decision[] })
             <th className="px-5 py-3 font-medium">Need</th>
             <th className="px-5 py-3 font-medium">Chosen match</th>
             <th className="px-5 py-3 font-medium">Outcome</th>
+            <th className="px-5 py-3 font-medium"></th>
           </tr>
         </thead>
         <tbody>
           {decisions.map((d) => {
             const open = openId === d.id
+            const canResume = d.outcome === "pending" && !!d.suggested_matches?.length
             return (
               <Fragment key={d.id}>
                 <tr
@@ -58,7 +65,7 @@ export default function DecisionsTable({ decisions }: { decisions: Decision[] })
                 >
                   <td className="px-5 py-3 text-xs text-muted">{formatTimestamp(d.created_at)}</td>
                   <td className="px-5 py-3 text-ink">
-                    {d.requester_name ?? "—"}
+                    {d.requester_name ?? "-"}
                     {d.requester_company && (
                       <span className="text-muted"> · {d.requester_company}</span>
                     )}
@@ -71,47 +78,65 @@ export default function DecisionsTable({ decisions }: { decisions: Decision[] })
                         <span className="text-muted"> · {d.chosen_member.company}</span>
                       </>
                     ) : (
-                      <span className="text-muted">—</span>
+                      <span className="text-muted">-</span>
                     )}
                   </td>
                   <td className="px-5 py-3">{outcomeChip(d.outcome)}</td>
+                  <td className="px-5 py-3 text-right">
+                    {canResume ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onResume(d)
+                        }}
+                        className="rounded-md border border-accent-strong/30 bg-accent-soft px-3 py-1 text-xs font-medium text-accent-strong transition hover:bg-accent-soft/70"
+                      >
+                        Resume
+                      </button>
+                    ) : null}
+                  </td>
                 </tr>
                 {open && (
                   <tr className="border-b border-line bg-subtle/40">
-                    <td colSpan={5} className="px-5 py-4">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
+                    <td colSpan={6} className="px-5 py-5">
+                      <div className="space-y-5">
+                        <section>
                           <div className="text-xs font-medium uppercase tracking-wide text-muted">
                             Full need
                           </div>
-                          <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">{d.need}</p>
-                        </div>
-                        <div>
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85">
+                            {d.need}
+                          </p>
+                        </section>
+
+                        <section>
                           <div className="text-xs font-medium uppercase tracking-wide text-muted">
                             Drafted intro
                           </div>
-                          <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85">
                             {d.intro_text ?? "Not drafted."}
                           </p>
-                          {d.team_note && (
-                            <>
-                              <div className="mt-3 text-xs font-medium uppercase tracking-wide text-muted">
-                                Team note
-                              </div>
-                              <p className="mt-1 whitespace-pre-wrap text-sm text-ink/80">
-                                {d.team_note}
-                              </p>
-                            </>
-                          )}
+                        </section>
+
+                        {d.team_note && (
+                          <section>
+                            <div className="text-xs font-medium uppercase tracking-wide text-muted">
+                              Team note
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/85">
+                              {d.team_note}
+                            </p>
+                          </section>
+                        )}
+
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                          <span>Attempts: {d.attempt_count}</span>
+                          <span>·</span>
+                          <span>
+                            Suggested: {d.suggested_matches?.map((m) => m.name).join(", ") ?? "-"}
+                          </span>
                         </div>
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
-                        <span>Attempts: {d.attempt_count}</span>
-                        <span>·</span>
-                        <span>
-                          Suggested:{" "}
-                          {d.suggested_matches?.map((m) => m.name).join(", ") ?? "—"}
-                        </span>
                       </div>
                     </td>
                   </tr>

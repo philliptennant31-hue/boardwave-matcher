@@ -1,4 +1,4 @@
-# Supabase setup — step by step
+# Supabase setup, step by step
 
 About 5 minutes start to finish.
 
@@ -7,7 +7,7 @@ About 5 minutes start to finish.
 1. Go to https://supabase.com/dashboard.
 2. Click **New project**.
 3. Choose your org. Project name: `boardwave-matcher`.
-4. Pick a strong database password — copy it somewhere safe, you won't need it for the app itself but Supabase requires one.
+4. Pick a strong database password. Copy it somewhere safe; you won't need it for the app itself but Supabase requires one.
 5. Region: pick the closest to you (London / Frankfurt for UK).
 6. Plan: free is fine for the demo; paid if you want lower cold-start.
 7. Click **Create project** and wait ~1 minute while it provisions.
@@ -24,7 +24,7 @@ About 5 minutes start to finish.
 
 In the left sidebar click the **Project Settings** gear icon at the bottom, then **API**.
 
-You need three values — copy them into the `.env` file at the repo root:
+You need three values. Copy them into the `.env` file at the repo root:
 
 | Supabase setting                          | .env variable                  |
 | ----------------------------------------- | ------------------------------ |
@@ -34,7 +34,7 @@ You need three values — copy them into the `.env` file at the repo root:
 
 ⚠️ The **service role key bypasses RLS**. Treat it like a database password:
 - Only ever lives in `.env` (gitignored) and the Netlify env dashboard.
-- **Never** rename it with a `VITE_` prefix — Vite would inline it into the client bundle and anyone visiting the site could read your full database.
+- **Never** rename it with a `VITE_` prefix. Vite would inline it into the client bundle and anyone visiting the site could read your full database.
 
 ## 4. Verify
 

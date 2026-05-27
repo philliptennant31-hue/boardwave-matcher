@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import NeedForm from "../components/NeedForm.tsx"
 import WeightingPanel from "../components/WeightingPanel.tsx"
 import MatchList from "../components/MatchList.tsx"
@@ -6,6 +6,7 @@ import IntroPreview from "../components/IntroPreview.tsx"
 import EmptyState from "../components/EmptyState.tsx"
 import { postMatch, postDraftIntro, patchDecision } from "../lib/api.ts"
 import type {
+  Decision,
   Match,
   Requester,
   Weighting,
@@ -20,7 +21,12 @@ type Status =
   | "exhausted"
   | "error"
 
-export default function MatchPage() {
+type Props = {
+  resumed: Decision | null
+  onResumedConsumed: () => void
+}
+
+export default function MatchPage({ resumed, onResumedConsumed }: Props) {
   const [status, setStatus] = useState<Status>("idle")
   const [error, setError] = useState<string | null>(null)
 
@@ -39,6 +45,37 @@ export default function MatchPage() {
   const [chosen, setChosen] = useState<Match | null>(null)
   const [intro, setIntro] = useState<string>("")
   const [teamNote, setTeamNote] = useState<string>("")
+
+  // Hydrate from a resumed decision pushed by the Decisions log.
+  useEffect(() => {
+    if (!resumed) return
+    if (
+      resumed.outcome === "pending" &&
+      resumed.suggested_matches?.length &&
+      resumed.weighting
+    ) {
+      setNeed(resumed.need)
+      setRequester({
+        name: resumed.requester_name ?? "",
+        company: resumed.requester_company ?? "",
+      })
+      setDecisionId(resumed.id)
+      setAttempt(
+        (resumed.attempt_count >= 1 && resumed.attempt_count <= 3
+          ? resumed.attempt_count
+          : 1) as 1 | 2 | 3,
+      )
+      setExcludedIds(resumed.excluded_ids ?? [])
+      setMatches(resumed.suggested_matches)
+      setWeighting(resumed.weighting)
+      setChosen(null)
+      setIntro("")
+      setTeamNote("")
+      setError(null)
+      setStatus("reviewing")
+    }
+    onResumedConsumed()
+  }, [resumed, onResumedConsumed])
 
   function reset() {
     setStatus("idle")
@@ -112,7 +149,6 @@ export default function MatchPage() {
 
   function handleRejectAll() {
     if (attempt >= 3) {
-      // Mark decision as rejected_all (fire-and-forget) and surface empty state.
       if (decisionId) {
         patchDecision({ id: decisionId, outcome: "rejected_all" }).catch(() => {})
       }
@@ -159,8 +195,8 @@ export default function MatchPage() {
 
       {status === "matching" && (
         <div className="rounded-2xl border border-line bg-surface p-10 text-center">
-          <div className="font-display text-lg font-semibold tracking-tight">
-            Reading the directory and scoring matches…
+          <div className="font-display text-xl font-semibold tracking-tight">
+            Reading the directory and scoring matches.
           </div>
           <p className="mt-2 text-sm text-muted">
             This usually takes 8 to 15 seconds.
@@ -191,7 +227,7 @@ export default function MatchPage() {
           {matches.length === 0 && (
             <EmptyState
               title="All cards rejected this round"
-              message="Tap Reject all & retry to surface a fresh three, or start a new brief."
+              message="Tap Reject all and retry to surface a fresh three, or start a new brief."
               actionLabel="Start over"
               onAction={reset}
             />
@@ -203,6 +239,7 @@ export default function MatchPage() {
         <IntroPreview
           decisionId={decisionId}
           chosenMember={chosen}
+          requester={requester}
           initialIntro={intro}
           initialTeamNote={teamNote}
           onFinish={reset}

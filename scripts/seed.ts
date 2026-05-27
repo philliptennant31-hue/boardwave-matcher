@@ -3,7 +3,7 @@
  *   npm run seed
  *
  * Upserts src/seed/members.json into the Supabase `members` table using the
- * service role key. Idempotent — safe to re-run.
+ * service role key. Idempotent, safe to re-run.
  */
 
 import "dotenv/config"

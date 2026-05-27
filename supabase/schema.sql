@@ -1,4 +1,4 @@
--- Boardwave Matcher — Supabase schema
+-- Boardwave Matcher: Supabase schema
 -- Run this in the Supabase SQL editor: SQL → New query → paste → Run.
 -- Safe to re-run: every CREATE uses IF NOT EXISTS and policies are dropped first.
 

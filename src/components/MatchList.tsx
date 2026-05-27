@@ -23,7 +23,7 @@ export default function MatchList({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl font-semibold tracking-tight">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">
           Suggested matches
         </h2>
         <span className="text-xs text-muted">Attempt {attempt} of 3</span>
@@ -51,7 +51,7 @@ export default function MatchList({
           disabled={busy || attempt >= 3}
           className="rounded-lg border border-line bg-surface px-4 py-2 text-sm text-danger transition hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? "Working…" : "Reject all & retry"}
+          {busy ? "Working." : "Reject all and retry"}
         </button>
       </div>
     </div>

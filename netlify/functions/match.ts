@@ -12,7 +12,7 @@ Your job: given a member's business challenge and a directory of fellow members,
 
 You work in two steps, in this order.
 
-STEP 1 — Set weights BEFORE looking at candidates.
+STEP 1. Set weights BEFORE looking at candidates.
 Read the challenge. Decide how much each of the five factors below matters FOR THIS specific challenge. Assign integer weights summing to 100. Write a one-sentence rationale explaining the weighting. Doing this BEFORE you see candidates prevents post-hoc rationalisation.
 
 The five factors:
@@ -22,8 +22,8 @@ The five factors:
 - geography: shared or relevant target market.
 - mutual_value: does the match have something to gain from the conversation too? Good connections are two-way.
 
-STEP 2 — Score and select.
-Now read the directory. For each viable candidate, score every factor 0 to 100 and write a one-line reason that references the candidate's ACTUAL bio or expertise tags. Never write tautological reasons like "good challenge match because they match the challenge" — reference something specific.
+STEP 2. Score and select.
+Now read the directory. For each viable candidate, score every factor 0 to 100 and write a one-line reason that references the candidate's ACTUAL bio or expertise tags. Never write tautological reasons like "good challenge match because they match the challenge". Always reference something specific.
 
 The overall score should reflect the weights you set in step 1 (weighted average of the per-factor scores).
 
@@ -34,7 +34,8 @@ Hard rules:
 - Never recommend a member whose id is in the excluded list.
 - All weights and scores are integers, 0 to 100.
 - The five weights MUST sum to exactly 100.
-- Each summary is two sentences max, plain English, peer-to-peer tone, not salesy.`
+- Each summary is two sentences max, plain English, peer-to-peer tone, not salesy.
+- Do not use em dashes anywhere in your output. Use commas, full stops, or restructure.`
 
 type Stage = "pre-seed" | "seed" | "series-a" | "series-b" | "series-c" | "exit"
 
@@ -191,6 +192,34 @@ function weightSum(w: MatcherResult["weights"]): number {
   return w.challenge + w.stage + w.sector + w.geography + w.mutual_value
 }
 
+/**
+ * Strip em dashes (U+2014) and en dashes (U+2013) from a string. The model
+ * occasionally still produces them despite the prompt rule; this is the
+ * server-side belt to the prompt's braces. Em/en dashes flanked by spaces
+ * become a comma; bare ones become a hyphen.
+ */
+function stripDashes(s: string): string {
+  return s.replace(/\s*[—–]\s*/g, ", ").replace(/[—–]/g, "-")
+}
+
+function sanitizeMatches(result: MatcherResult): MatcherResult {
+  return {
+    weighting_reasoning: stripDashes(result.weighting_reasoning),
+    weights: result.weights,
+    matches: result.matches.map((m) => ({
+      ...m,
+      summary: stripDashes(m.summary),
+      factor_breakdown: {
+        challenge: { ...m.factor_breakdown.challenge, reason: stripDashes(m.factor_breakdown.challenge.reason) },
+        stage: { ...m.factor_breakdown.stage, reason: stripDashes(m.factor_breakdown.stage.reason) },
+        sector: { ...m.factor_breakdown.sector, reason: stripDashes(m.factor_breakdown.sector.reason) },
+        geography: { ...m.factor_breakdown.geography, reason: stripDashes(m.factor_breakdown.geography.reason) },
+        mutual_value: { ...m.factor_breakdown.mutual_value, reason: stripDashes(m.factor_breakdown.mutual_value.reason) },
+      },
+    })),
+  }
+}
+
 function buildUserMessage(
   need: string,
   requester: { name: string; company: string },
@@ -208,7 +237,7 @@ function buildUserMessage(
   lines.push(`This is attempt ${attempt} of 3.`)
   if (excluded_ids.length > 0) {
     lines.push(
-      `The reviewer has already rejected these member_ids in earlier attempts — do NOT recommend any of them: ${excluded_ids.join(", ")}.`,
+      `The reviewer has already rejected these member_ids in earlier attempts. Do NOT recommend any of them: ${excluded_ids.join(", ")}.`,
     )
   } else {
     lines.push(`No members are excluded.`)
@@ -296,7 +325,7 @@ export default async (req: Request, _context: Context) => {
   const supabase = serverSupabase()
 
   // Load directory, excluding rejected members.
-  // supabase-js builders are chainable but immutable — must reassign.
+  // supabase-js builders are chainable but immutable, must reassign.
   let memberQuery = supabase
     .from("members")
     .select("id, name, company, role, stage, sectors, geography, expertise, bio, open_to")
@@ -369,8 +398,12 @@ export default async (req: Request, _context: Context) => {
       )
     }
 
+    // Safety net: strip any em or en dashes the model slipped in despite the
+    // prompt rule. Cheaper than another round-trip if the model regresses.
+    const sanitized = sanitizeMatches(parsed)
+
     // Server-side validation.
-    const ws = weightSum(parsed.weights)
+    const ws = weightSum(sanitized.weights)
     if (Math.abs(ws - 100) > 2) {
       console.error(`match: weights sum to ${ws}, expected 100`)
       return Response.json(
@@ -381,7 +414,7 @@ export default async (req: Request, _context: Context) => {
 
     const directoryIds = new Set((directory as DirectoryMember[]).map((m) => m.id))
     const excludedSet = new Set(excluded_ids)
-    for (const m of parsed.matches) {
+    for (const m of sanitized.matches) {
       if (!directoryIds.has(m.member_id)) {
         console.error(`match: model returned unknown member_id ${m.member_id}`)
         return Response.json(
@@ -402,11 +435,11 @@ export default async (req: Request, _context: Context) => {
     }
 
     // Ensure descending by score.
-    parsed.matches.sort((a, b) => b.score - a.score)
+    sanitized.matches.sort((a, b) => b.score - a.score)
 
     const weighting = {
-      reasoning: parsed.weighting_reasoning,
-      weights: parsed.weights,
+      reasoning: sanitized.weighting_reasoning,
+      weights: sanitized.weights,
     }
 
     // Insert or update the decisions row.
@@ -419,7 +452,7 @@ export default async (req: Request, _context: Context) => {
           requester_company: requesterCompany,
           need,
           weighting,
-          suggested_matches: parsed.matches,
+          suggested_matches: sanitized.matches,
           excluded_ids,
           attempt_count: attempt,
           outcome: "pending",
@@ -439,7 +472,7 @@ export default async (req: Request, _context: Context) => {
         .from("decisions")
         .update({
           weighting,
-          suggested_matches: parsed.matches,
+          suggested_matches: sanitized.matches,
           excluded_ids,
           attempt_count: attempt,
         })
@@ -455,7 +488,7 @@ export default async (req: Request, _context: Context) => {
 
     const generatedInMs = Math.round(performance.now() - start)
     console.log(
-      `match: attempt ${attempt}, ${parsed.matches.length} matches, weights sum ${ws}, ${generatedInMs}ms`,
+      `match: attempt ${attempt}, ${sanitized.matches.length} matches, weights sum ${ws}, ${generatedInMs}ms`,
     )
 
     return Response.json({
@@ -463,7 +496,7 @@ export default async (req: Request, _context: Context) => {
       decision_id: resultDecisionId,
       attempt,
       weighting,
-      matches: parsed.matches,
+      matches: sanitized.matches,
       generatedInMs,
     })
   } catch (err) {

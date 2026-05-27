@@ -6,7 +6,7 @@
  * lines, no signoffs.
  *
  * Inlined into the user message of the drafter call (NOT the system prompt)
- * so they can be tweaked without a code change ripple — when Boardwave gives
+ * so they can be tweaked without a code change ripple. When Boardwave gives
  * us real anonymised examples, just edit this file.
  */
 
