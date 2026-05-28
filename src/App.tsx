@@ -76,19 +76,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 sm:py-5">
           <button
             type="button"
             onClick={() => navigate("/")}
             className="flex items-center gap-3 text-left"
           >
-            <BrandMark className="h-9 w-auto" />
-            <span className="flex flex-col leading-tight">
+            <BrandMark className="h-9 w-auto shrink-0" />
+            <span className="flex min-w-0 flex-col leading-tight">
               <span className="font-display text-2xl font-semibold tracking-tight text-ink">
                 Boardwave
               </span>
               <span
-                className="mt-0.5 flex items-center gap-1.5 text-xs text-muted"
+                className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-xs text-muted"
                 title="This is a concept demo, not a Boardwave product."
               >
                 Member matcher
@@ -98,18 +98,18 @@ export default function App() {
               </span>
             </span>
           </button>
-          <nav className="flex items-center gap-1">
+          <nav className="-mx-1 flex flex-wrap items-center justify-start gap-1 sm:mx-0 sm:justify-end">
             <NavLink to="/" label="Match" />
             <NavLink to="/directory" label="Directory" />
             <NavLink to="/decisions" label="Decisions" />
-            <div className="ml-2">
+            <div className="ml-1 sm:ml-2">
               <ResetDemoButton />
             </div>
           </nav>
         </div>
       </header>
 
-      <main className={`mx-auto ${mainMaxWidth} px-6 py-10`}>
+      <main className={`mx-auto ${mainMaxWidth} px-4 py-8 sm:px-6 sm:py-10`}>
         {path === "/decisions" ? (
           <DecisionsPage onResumeDecision={resumeDecision} />
         ) : path === "/directory" ? (
@@ -125,7 +125,7 @@ export default function App() {
         )}
       </main>
 
-      <footer className="mx-auto max-w-6xl px-6 py-12">
+      <footer className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
         <div className="flex flex-col items-center gap-3 text-center">
           <a
             href="https://tenphi.netlify.app/"

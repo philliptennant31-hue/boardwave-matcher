@@ -55,7 +55,7 @@ export default function WeightingPanel({ weighting }: { weighting: Weighting }) 
               const pct = (w / max) * 100
               return (
                 <div key={key} className="flex items-center gap-3 text-xs">
-                  <div className="w-32 text-muted">{FACTOR_LABELS[key]}</div>
+                  <div className="w-24 shrink-0 text-muted sm:w-32">{FACTOR_LABELS[key]}</div>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface">
                     <div
                       className="h-full rounded-full bg-brand-gradient"

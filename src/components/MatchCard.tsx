@@ -81,33 +81,35 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
   const badge = scoreBadgeClasses(match.score)
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <button
           type="button"
           onClick={() => setProfileOpen(true)}
-          className="flex items-center gap-3 text-left"
+          className="flex min-w-0 items-center gap-3 text-left"
         >
           <MemberAvatar
             name={match.name}
             slug={match.member?.slug}
             size="md"
           />
-          <div>
-            <h3 className="font-display text-xl font-semibold tracking-tight transition hover:text-accent-strong">
+          <div className="min-w-0">
+            <h3 className="truncate font-display text-lg font-semibold tracking-tight transition hover:text-accent-strong sm:text-xl">
               {match.name}
             </h3>
-            <p className="text-sm text-muted">
+            <p className="truncate text-sm text-muted">
               {match.company}
-              <span className="ml-2 text-xs text-accent-strong/80">View profile</span>
+              <span className="ml-2 hidden text-xs text-accent-strong/80 sm:inline">
+                View profile
+              </span>
             </p>
           </div>
         </button>
-        <div className={`rounded-xl px-3 py-2 text-center ${badge.box}`}>
-          <div className={`text-xs font-medium uppercase tracking-wide ${badge.label}`}>
+        <div className={`shrink-0 rounded-xl px-3 py-2 text-center ${badge.box}`}>
+          <div className={`text-[10px] font-medium uppercase tracking-wide sm:text-xs ${badge.label}`}>
             Score
           </div>
-          <div className={`font-display text-3xl font-semibold leading-none ${badge.value}`}>
+          <div className={`font-display text-2xl font-semibold leading-none sm:text-3xl ${badge.value}`}>
             {match.score}
           </div>
         </div>
@@ -115,18 +117,18 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
 
       <p className="mt-4 text-sm leading-relaxed text-ink/85">{match.summary}</p>
 
-      <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-5">
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
         {ORDER.map((k) => (
           <FactorCell key={k} label={FACTOR_LABELS[k]} factor={match.factor_breakdown[k]} />
         ))}
       </div>
 
-      <div className="mt-5 flex items-center justify-end gap-3">
+      <div className="mt-5 flex items-center justify-end gap-2 sm:gap-3">
         <button
           type="button"
           onClick={onReject}
           disabled={busy}
-          className="rounded-lg border border-line bg-surface px-4 py-2 text-sm text-ink transition hover:bg-subtle disabled:opacity-50"
+          className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink transition hover:bg-subtle disabled:opacity-50"
         >
           Reject
         </button>
@@ -134,7 +136,7 @@ export default function MatchCard({ match, onApprove, onReject, busy }: Props) {
           type="button"
           onClick={onApprove}
           disabled={busy}
-          className="rounded-lg bg-brand-gradient px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+          className="rounded-lg bg-brand-gradient px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
         >
           Approve
         </button>
